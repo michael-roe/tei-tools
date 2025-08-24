@@ -16,3 +16,8 @@ int check_betacode(wchar_t *str);
  */
 
 int is_ascii_whitespace(char *str);
+
+void betacode_translate(wchar_t *dst, wchar_t *src, int size);
+
+void betacode_table();
+

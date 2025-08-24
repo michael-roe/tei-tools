@@ -9,6 +9,7 @@
 
 #define BUFFER_SIZE 1024
 static wchar_t buff[BUFFER_SIZE];
+static wchar_t translated[BUFFER_SIZE];
 
 void parse_tree(xmlNode *node)
 {
@@ -51,7 +52,8 @@ xmlChar *n;
             fprintf(stderr, "*** buffer filled up ***\n");
           }
           (void) check_betacode(buff);
-          wprintf(L"%ls", buff);
+          betacode_translate(translated, buff, sizeof(translated));
+          wprintf(L"%ls", translated);
         }
       }
     }
@@ -126,6 +128,8 @@ int main(int argc, char **argv)
   setlocale(LC_ALL, getenv("LANG"));
 
   LIBXML_TEST_VERSION
+
+  /* betacode_table(); */
 
   doc = xmlReadFile("ecclesiazusae.xml", NULL, 0);
 

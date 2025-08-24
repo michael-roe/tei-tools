@@ -3,10 +3,53 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <wchar.h>
+#include <wctype.h>
 
 #include "betacode.h"
 
 static wchar_t *permitted = L" abgdevzhqiklmncoprtufxyw()/=\\+|?.,:;'-\n\t";
+
+struct mapping {
+  wchar_t src;
+  wchar_t dst;
+};
+
+static struct mapping table[] = {
+  {'a', 0x3b1},
+  {'b', 0x3b2},
+  {'c', 0x3be},
+  {'d', 0x3b4},
+  {'e', 0x3b5},
+  {'f', 0x3c6},
+  {'g', 0x3b3},
+  {'h', 0x3b7},
+  {'i', 0x3b9},
+  {'k', 0x3ba},
+  {'l', 0x3bb},
+  {'m', 0x3bc},
+  {'n', 0x3bd},
+  {'o', 0x3bf},
+  {'p', 0x3c0},
+  {'q', 0x3b8},
+  {'r', 0x3c1},
+  /* sigma is special, because initial and final sigma differ */
+  {'t', 0x3c4},
+  {'u', 0x3c5},
+  {'v', 0x3dd},
+  {'w', 0x3c9},
+  {'x', 0x3c7},
+  {'y', 0x3c8},
+  {'z', 0x3b6},
+  {'\'', 0x2019}, /* right single quotation mark */
+  {'-', 0x2010}, /* hyphen */
+  {'_', 0x2014}, /* em dash */
+  /*
+   * period, comma, middle dot, and semicolon map to themselves 
+   * space and newline also map to themselves, even if the betacode
+   * specification doesn't say so explicitly.
+   */
+  {0, 0}
+};
 
 static wchar_t buff[1024];
 
@@ -61,3 +104,74 @@ int is_ascii_whitespace(char *str)
   }
   return 1;
 } 
+
+static wchar_t translate(wchar_t c)
+{
+  struct mapping *mp;
+
+  mp = table;
+
+  while (mp->src)
+  {
+    if (mp->src == c)
+    {
+      return mp->dst;
+    }
+    mp++;
+  }
+}
+
+void betacode_translate(wchar_t *dst, wchar_t *src, int size)
+{
+  wchar_t *in_ptr;
+  wchar_t *out_ptr;
+  wchar_t c;
+  int upper_case;
+
+  in_ptr = src;
+  out_ptr = dst;
+  upper_case = 0;
+
+  while (*src)
+  {
+    if (*src == '*')
+    {
+      upper_case = 1;
+      src++;
+    }
+    else
+    {
+      c = translate(*src);
+      if (c)
+      {
+        *dst = c;
+      }
+      else
+      {
+        *dst = *src;
+      }
+      if (upper_case)
+      {
+        *dst = towupper(*dst);
+        upper_case = 0;
+      }
+      src++;
+      dst++;
+    }
+  }
+
+  *dst = '\0';
+}
+
+void betacode_table()
+{
+  struct mapping *mp;
+
+  mp = table;
+
+  while (mp->src)
+  {
+    fwprintf(stderr, L"%lc %lc\n", mp->src, mp->dst);
+    mp++;
+  }
+}
