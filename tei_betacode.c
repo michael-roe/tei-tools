@@ -7,22 +7,53 @@
 
 #include "betacode.h"
 
+#define BUFFER_SIZE 1024
+static wchar_t buff[BUFFER_SIZE];
+
 void parse_tree(xmlNode *node)
 {
 xmlNode *current;
+xmlChar *content;
+xmlChar *n;
 
   for (current = node; current; current = current->next)
   {
     if (current->type == XML_ELEMENT_NODE)
     {
-      /* printf("<%s>", current->name); */
+      wprintf(L"<%s", current->name);
+      if (strcmp(current->name, "lb") == 0)
+      {
+        n = xmlGetProp(current, "n");
+        if (n)
+        {
+          wprintf(L" n=\"%s\"", n);
+        }
+      }
+      wprintf(L">");
       parse_tree(current->children);
-      /* printf("<\\%s>", current->name); */
+      wprintf(L"<\\%s>", current->name);
     }
     else
     {
-      (void) check_betacode(xmlNodeGetContent(current));
-      /* printf("%s", xmlNodeGetContent(current)); */
+      content = xmlNodeGetContent(current);
+      if (content)
+      {
+        if (is_ascii_whitespace(content))
+        {
+          wprintf(L"%s", content);
+        }
+        else
+        {
+          mbstowcs(buff, content, sizeof(buff));
+          buff[BUFFER_SIZE - 1] = '\0';
+          if (wcslen(buff) == BUFFER_SIZE - 1)
+          {
+            fprintf(stderr, "*** buffer filled up ***\n");
+          }
+          (void) check_betacode(buff);
+          wprintf(L"%ls", buff);
+        }
+      }
     }
   }
 }

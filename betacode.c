@@ -1,62 +1,63 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <wchar.h>
 
 #include "betacode.h"
 
-static char *permitted = " abgdevzhqiklmncoprtufxyw()/=\\+|?.,:;'-\n\t";
+static wchar_t *permitted = L" abgdevzhqiklmncoprtufxyw()/=\\+|?.,:;'-\n\t";
 
 static wchar_t buff[1024];
 
-int check_betacode(char *str)
+int check_betacode(wchar_t *str)
 {
-  unsigned char *cp;
-  wchar_t *wcp;
-  int not_ascii;
+  wchar_t *cp;
 
-  not_ascii = 0;
-  for (cp = str; *cp; cp++)
+  cp = str;
+
+  while (*cp)
   {
-    if (*cp > 0x7f)
+    if (*cp == 's')
     {
-      not_ascii = 1;
     }
-  }
-
-  if (not_ascii)
-  {
-    mbstowcs(buff, str, sizeof(buff));
-    wcp = buff;
-    while (*wcp)
+    else if (*cp == '*')
     {
-      if (*wcp > 0x7f)
-      {
-        fprintf(stderr, "Unexpected character: %x (%lc)\n", *wcp, *wcp);
-      }
-      wcp++;
-    }     
-  }
-  else
-  {
-    cp = str;
-
-    while (*cp)
-    {
-      if (*cp == 's')
-      {
-      }
-      else if (*cp == '*')
-      {
-      }
-      else if (strchr(permitted, *cp) == NULL)
-      {
-        fprintf(stderr, "Unexpected character: %x (%c)\n", (unsigned char) *cp, *cp);
-        fprintf(stderr, "%s\n", str);
-        return 1;
-      }
-      cp++;
     }
+    else if (wcschr(permitted, *cp) == NULL)
+    {
+      fprintf(stderr, "Unexpected character: %x (%lc)\n", *cp, *cp);
+      fprintf(stderr, "%ls\n", str);
+      return 1;
+    }
+    cp++;
   }
   return 0;
 }
+
+int is_ascii_whitespace(char *str)
+{
+  char *cp;
+
+  cp = str;
+  while (*cp)
+  {
+    /*
+     * It is a property of the UTF-8 encoding that characters above 0x7f
+     * have encodings with the top bit set.
+     */
+
+    if (*cp > 0x7f)
+    {
+      return 0;
+    }
+
+    if (!isspace(*cp))
+    {
+      return 0;
+    }
+
+    cp++;
+  }
+  return 1;
+} 
