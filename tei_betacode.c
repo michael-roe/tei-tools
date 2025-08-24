@@ -32,7 +32,7 @@ xmlChar *n;
       }
       wprintf(L">");
       parse_tree(current->children);
-      wprintf(L"<\\%s>", current->name);
+      wprintf(L"</%s>", current->name);
     }
     else
     {
