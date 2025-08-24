@@ -7,7 +7,7 @@
 
 #include "betacode.h"
 
-static wchar_t *permitted = L" abgdevzhqiklmncoprtufxyw()/=\\+|?.,:;'-\n\t";
+static wchar_t *permitted = L" abgdevzhqiklmncoprtufxyw()/=\\+|?.,:;'-_\n\t";
 
 struct mapping {
   wchar_t src;
@@ -48,6 +48,18 @@ static struct mapping table[] = {
    * space and newline also map to themselves, even if the betacode
    * specification doesn't say so explicitly.
    */
+  {0, 0}
+};
+
+static struct mapping diacritics[] = {
+  {')', 0x313},
+  {'(', 0x314},
+  {'/', 0x301},
+  {'=', 0x342},
+  {'\\', 0x300},
+  {'+', 0x308},
+  {'|', 0x345},
+  {'?', 0x323},
   {0, 0}
 };
 
@@ -121,6 +133,22 @@ static wchar_t translate(wchar_t c)
   }
 }
 
+static wchar_t diacritic(wchar_t c)
+{
+  struct mapping *mp;
+
+  mp = diacritics;
+
+  while (mp->src)
+  {
+    if (mp->src == c)
+    {
+      return mp->dst;
+    }
+    mp++;
+  }
+}
+
 void betacode_translate(wchar_t *dst, wchar_t *src, int size)
 {
   wchar_t *in_ptr;
@@ -139,22 +167,70 @@ void betacode_translate(wchar_t *dst, wchar_t *src, int size)
       upper_case = 1;
       src++;
     }
-    else
+    else if (*src == 's')
     {
-      c = translate(*src);
-      if (c)
+     /*
+      * Sigma is special, because final sigma and medial sigma
+      * are different characters.
+      */
+
+      if (src[1] == '1')
       {
-        *dst = c;
+        *dst = 0x3c3;
+        src++;
+      }
+      else if (src[1] == '2')
+      {
+        *dst = 0x3c2;
+        src++;
+      }
+      else if (src[1] == '3')
+      {
+        *dst = 0x3f2;
+        src++;
+      }
+      else if (src[1] == '\0')
+      {
+        *dst = 0x3c2;
+      }
+      else if ((src[1] == ' ') || (src[1] == '.') || (src[1] == ','))
+      {
+        /* Probably should check for other punctuation */
+        *dst = 0x3c2;
       }
       else
       {
-        *dst = *src;
+        *dst = 0x3c3;
       }
+
       if (upper_case)
       {
         *dst = towupper(*dst);
         upper_case = 0;
       }
+      src++;
+      dst++;
+    }
+    else if (c = translate(*src))
+    {
+      *dst = c;
+      if (upper_case)
+      {
+        *dst = towupper(*dst);
+        upper_case = 0;
+      }
+      src++;
+      dst++;
+    }
+    else if (c = diacritic(*src))
+    {
+      *dst = c;
+      src++;
+      dst++;
+    }
+    else
+    {
+      *dst = *src;
       src++;
       dst++;
     }
@@ -172,6 +248,15 @@ void betacode_table()
   while (mp->src)
   {
     fwprintf(stderr, L"%lc %lc\n", mp->src, mp->dst);
+    mp++;
+  }
+
+  mp = diacritics;
+
+  while (mp->src)
+  {
+    /* Use alpha a suitable base character to demonstrate diacritics */
+    fwprintf(stderr, L"%lc %lc%lc\n", mp->src, 0x3b1, mp->dst);
     mp++;
   }
 }
