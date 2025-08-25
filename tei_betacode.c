@@ -29,6 +29,7 @@ size_t output_len;
   {
     if (current->type == XML_ELEMENT_NODE)
     {
+#if 0
       wprintf(L"<%s", current->name);
       if (strcmp(current->name, "lb") == 0)
       {
@@ -39,8 +40,11 @@ size_t output_len;
         }
       }
       wprintf(L">");
+#endif
       parse_tree(current->children);
+#if 0
       wprintf(L"</%s>", current->name);
+#endif
     }
     else
     {
@@ -49,7 +53,9 @@ size_t output_len;
       {
         if (is_ascii_whitespace(content))
         {
+#if 0
           wprintf(L"%s", content);
+#endif
         }
         else
         {
@@ -83,7 +89,9 @@ size_t output_len;
             exit(-1);
           }
           serialized[output_len] = '\0';
+#if 0
           wprintf(L"%s", serialized);
+#endif
 
           /*
            * XML special characters like & ought to be escaped before calling
@@ -206,10 +214,10 @@ int main(int argc, char **argv)
   }
   else
   {
-    fprintf(stderr, "DocDump wrote %d bytes.\n", rc);
+    /* fprintf(stderr, "DocDump wrote %d bytes.\n", rc); */
   }
 
-  fprintf(stderr, "xmlDocDump done.\n");
+  /* fprintf(stderr, "xmlDocDump done.\n"); */
 
   xmlCleanupParser();
 
