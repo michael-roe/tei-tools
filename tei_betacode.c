@@ -14,6 +14,9 @@ static uint32_t buff[BUFFER_SIZE];
 static uint32_t translated[BUFFER_SIZE];
 static uint32_t normalized[BUFFER_SIZE];
 
+#define SERIAL_BUFFER_SIZE 2048
+static uint8_t serialized[SERIAL_BUFFER_SIZE];
+
 void parse_tree(xmlNode *node)
 {
 xmlNode *current;
@@ -72,7 +75,22 @@ size_t output_len;
             exit(-1);
           }
           normalized[output_len] = '\0';
-          wprintf(L"%ls", normalized);
+          len = output_len;
+          output_len = SERIAL_BUFFER_SIZE - 1;
+          if (u32_to_u8(normalized, len, serialized, &output_len) == NULL)
+          {
+            fprintf(stderr, "u32_to_u8 failed.\n");
+            exit(-1);
+          }
+          serialized[output_len] = '\0';
+          wprintf(L"%s", serialized);
+
+          /*
+           * XML special characters like & ought to be escaped before calling
+           * xmlNodeSetContent.
+           */
+
+          xmlNodeSetContent(current, strdup(serialized));
         }
       }
     }
@@ -143,6 +161,8 @@ int main(int argc, char **argv)
 {
   xmlDoc *doc; 
   xmlNode *root_element;
+  int rc;
+  FILE *f1;
 
   setlocale(LC_ALL, getenv("LANG"));
 
@@ -155,6 +175,22 @@ int main(int argc, char **argv)
   root_element = xmlDocGetRootElement(doc);
 
   parse_root(root_element);
+
+  f1 = fopen("out.xml", "w");
+  rc = xmlDocDump(f1, doc);
+  fclose(f1);
+  
+  if (rc < 0)
+  {
+    fprintf(stderr, "xmlDocDump failed.\n");
+    exit(-1);
+  }
+  else
+  {
+    fprintf(stderr, "DocDump wrote %d bytes.\n", rc);
+  }
+
+  fprintf(stderr, "xmlDocDump done.\n");
 
   xmlCleanupParser();
 
