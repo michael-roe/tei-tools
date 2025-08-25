@@ -2,20 +2,25 @@
 #include <wchar.h>
 #include <string.h>
 #include <locale.h>
+#include <unistr.h>
+#include <uninorm.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 
 #include "betacode.h"
 
 #define BUFFER_SIZE 1024
-static wchar_t buff[BUFFER_SIZE];
-static wchar_t translated[BUFFER_SIZE];
+static uint32_t buff[BUFFER_SIZE];
+static uint32_t translated[BUFFER_SIZE];
+static uint32_t normalized[BUFFER_SIZE];
 
 void parse_tree(xmlNode *node)
 {
 xmlNode *current;
 xmlChar *content;
 xmlChar *n;
+size_t len;
+size_t output_len;
 
   for (current = node; current; current = current->next)
   {
@@ -45,15 +50,29 @@ xmlChar *n;
         }
         else
         {
-          mbstowcs(buff, content, sizeof(buff));
-          buff[BUFFER_SIZE - 1] = '\0';
-          if (wcslen(buff) == BUFFER_SIZE - 1)
+          output_len = BUFFER_SIZE - 1;
+          if (u8_to_u32(content, strlen(content), buff, &output_len) == NULL)
           {
-            fprintf(stderr, "*** buffer filled up ***\n");
+            fprintf(stderr, "u8_to_u32 failed.\n");
+            exit(-1);
           }
+          if (output_len >= BUFFER_SIZE - 1)
+          {
+            fprintf(stderr, "*** buffer filled up (%ld words) ***\n", len);
+            exit(-1);
+          }
+          buff[output_len] = '\0';
           (void) check_betacode(buff);
           betacode_translate(translated, buff, sizeof(translated));
-          wprintf(L"%ls", translated);
+          output_len = BUFFER_SIZE - 1;
+          if (u32_normalize(UNINORM_NFC, translated, wcslen(translated),
+            normalized, &output_len) == NULL)
+          {
+            fprintf(stderr, "u32_normalize failed.\n");
+            exit(-1);
+          }
+          normalized[output_len] = '\0';
+          wprintf(L"%ls", normalized);
         }
       }
     }

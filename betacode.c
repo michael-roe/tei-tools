@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <stdint.h>
 #include <wchar.h>
 #include <wctype.h>
 
@@ -149,7 +150,7 @@ static wchar_t diacritic(wchar_t c)
   }
 }
 
-void betacode_translate(wchar_t *dst, wchar_t *src, int size)
+void betacode_translate(uint32_t *dst, uint32_t *src, int size)
 {
   wchar_t *in_ptr;
   wchar_t *out_ptr;
