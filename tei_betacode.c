@@ -124,6 +124,7 @@ xmlNode *current;
 void parse_tei(xmlNode *node)
 {
 xmlNode *current;
+xmlChar *lang;
 
   for (current = node; current; current = current->next)
   {
@@ -138,6 +139,12 @@ xmlNode *current;
       }
       else if (strcmp(current->name, "text") == 0)
       {
+        lang = xmlGetProp(current, "lang");
+        if (lang == NULL)
+        {
+          xmlSetProp(current, "xml:lang", "grc");
+        }
+
         parse_text(current->children);
       }
     }
