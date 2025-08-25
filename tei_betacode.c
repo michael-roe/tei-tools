@@ -168,16 +168,35 @@ int main(int argc, char **argv)
 
   LIBXML_TEST_VERSION
 
+  if (argc < 3)
+  {
+    fprintf(stderr, "Usage: %s <infile> <outfile>\n", argv[0]);
+    exit(-1);
+  }
+
   /* betacode_table(); */
 
-  doc = xmlReadFile("ecclesiazusae.xml", NULL, 0);
+  doc = xmlReadFile(argv[1], NULL, 0);
+
+  if (doc == NULL)
+  {
+    fprintf(stderr, "Can't open file: %s\n", argv[1]);
+    exit(-1);
+  }
 
   root_element = xmlDocGetRootElement(doc);
 
   parse_root(root_element);
 
-  f1 = fopen("out.xml", "w");
+  f1 = fopen(argv[2], "w");
+  if (f1 == NULL)
+  {
+    fprintf(stderr, "Can't write to: %s\n", argv[2]);
+    exit(-1);
+  }
+
   rc = xmlDocDump(f1, doc);
+
   fclose(f1);
   
   if (rc < 0)
